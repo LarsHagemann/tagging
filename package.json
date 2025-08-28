@@ -1,5 +1,5 @@
 {
-  "name": "tags",
+  "name": "@lars_hagemann/tags",
   "version": "1.0.0",
   "description": "A general tagging library build on postgres",
   "main": "index.js",
