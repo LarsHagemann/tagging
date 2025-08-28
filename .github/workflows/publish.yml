@@ -1,11 +1,10 @@
-name: CI/CD
+name: Publish
 
 on:
   push:
     branches:
-      - main2
-      #- main
-      #- develop
+      - main
+      - develop
 
 jobs:
   build:
