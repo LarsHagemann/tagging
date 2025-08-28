@@ -4,6 +4,7 @@
   "description": "A general tagging library build on postgres",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
     "test": "vitest",
     "test:unit": "vitest --config vitest.unit.config.ts"
   },
@@ -13,5 +14,9 @@
     "docker-compose": "^1.2.0",
     "postgres": "^3.4.7",
     "vitest": "^3.2.4"
+  },
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "typescript": "^5.9.2"
   }
 }
