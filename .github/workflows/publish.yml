@@ -33,11 +33,18 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           tag: tagging-${{ steps.version.outputs.version_tag }}
+      - name: 'change version'
+        if: ${{ steps.version.outputs.version_type != 'none' }}
+        uses: reedyuk/npm-version@1.1.1
+        with:
+          version: ${{ steps.version.outputs.version }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
       - run: npm ci
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+      - uses: JS-DevTools/npm-publish@v3
+        if: ${{ steps.version.outputs.version_type != 'none' }}
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          tag: ${{ steps.version.outputs.version_tag }}
