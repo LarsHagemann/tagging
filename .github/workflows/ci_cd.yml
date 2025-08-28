@@ -1,0 +1,18 @@
+name: CI/CD
+
+on: [pull_request]
+
+jobs:
+  tagging:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v3
+    - uses: docker/setup-compose-action@v1.2.0
+    - name: Tagging:test
+      run: |
+        npm ci
+        npm run test
