@@ -47,4 +47,4 @@ jobs:
         if: ${{ steps.version.outputs.version_type != 'none' }}
         with:
           token: ${{ secrets.NPM_TOKEN }}
-          tag: ${{ steps.version.outputs.version_tag }}
+          tag: ${{ steps.version.outputs.version }}
