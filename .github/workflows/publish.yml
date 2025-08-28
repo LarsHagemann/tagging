@@ -48,3 +48,4 @@ jobs:
         if: ${{ steps.version.outputs.version_type != 'none' }}
         with:
           token: ${{ secrets.NPM_TOKEN }}
+          access: public
