@@ -1,5 +1,7 @@
 ## Tagging system
 
+[![CI/CD](https://github.com/LarsHagemann/tagging/actions/workflows/ci_cd.yml/badge.svg)](https://github.com/LarsHagemann/tagging/actions/workflows/ci_cd.yml)
+
 This package provides a simple way of parsing tags into a programmatically useful form. 
 
 ### Usage
