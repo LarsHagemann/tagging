@@ -10,12 +10,8 @@
   "author": "Lars Hagemann",
   "license": "ISC",
   "devDependencies": {
-    "@types/pg": "^8.15.5",
-    "pg": "^8.16.3",
+    "docker-compose": "^1.2.0",
     "postgres": "^3.4.7",
     "vitest": "^3.2.4"
-  },
-  "dependencies": {
-    "docker-compose": "^1.2.0"
   }
 }
