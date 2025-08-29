@@ -1,5 +1,5 @@
 import { AndTag, Filter, MetaTag, NotTag, OrTag, Tag, TrueTag } from "./Tag";
-import { TagScanner, Token, TokenType } from "./TagScanner";
+import { TagScanner, Token, tokenType, TokenType } from "./TagScanner";
 
 export abstract class BaseTagScanner {
   abstract nextToken(): Token;
@@ -40,15 +40,15 @@ export class TagParser {
 
   // (<literal> | <literal>:<literal> | <lparen><binary><rparen>)
   private parsePrimary(): Filter {
-    if (this.match(TokenType.LPAREN)) {
+    if (this.match(tokenType.LPAREN)) {
       const expr = this.parseBinary();
-      this.expect(TokenType.RPAREN, "Expected closing parenthesis");
+      this.expect(tokenType.RPAREN, "Expected closing parenthesis");
       return expr;
     }
 
-    this.expect(TokenType.IDENTIFIER, "Expected identifier");
+    this.expect(tokenType.IDENTIFIER, "Expected identifier");
     const key = this.previous.lexeme;
-    if (this.match(TokenType.COLON)) {
+    if (this.match(tokenType.COLON)) {
       this.advance();
       return new MetaTag(key, this.previous.lexeme);
     }
@@ -57,7 +57,7 @@ export class TagParser {
 
   // (<primary> | !<unary>)
   private parseUnary(): Filter {
-    if (this.match(TokenType.NOT)) {
+    if (this.match(tokenType.NOT)) {
       const operand = this.parseUnary();
       return new NotTag(operand);
     }
@@ -68,10 +68,10 @@ export class TagParser {
   private parseBinary(): Filter {
     let left = this.parseUnary();
 
-    while (this.match(TokenType.AND) || this.match(TokenType.OR)) {
+    while (this.match(tokenType.AND) || this.match(tokenType.OR)) {
       const operator = this.previous;
       const right = this.parseUnary();
-      if (operator.type === TokenType.AND) {
+      if (operator.type === tokenType.AND) {
         left = new AndTag(left, right);
       }
       else {
@@ -84,12 +84,12 @@ export class TagParser {
 
   // (<eof> | <binary>)
   public parse(): Filter {
-    if (this.current.type === TokenType.EOF) {
+    if (this.current.type === tokenType.EOF) {
       return new TrueTag();
     }
 
     const filter = this.parseBinary();
-    this.expect(TokenType.EOF, "Expected end of input");
+    this.expect(tokenType.EOF, "Expected end of input");
     return filter;
   }
 }
