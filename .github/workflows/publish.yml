@@ -5,21 +5,9 @@ on:
     branches:
       - main
       - develop
-      - feat/github-actions
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci
-      - run: npm test
-
   publish-npm:
-    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,9 +31,12 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
+      - run: |
+          npm ci
+          npm run build
       - uses: JS-DevTools/npm-publish@v3
         if: ${{ steps.version.outputs.version_type != 'none' }}
         with:
           token: ${{ secrets.NPM_TOKEN }}
           access: public
+          tag: ${{ github.ref_name == 'main' && 'latest' || 'next' }}

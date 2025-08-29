@@ -2,9 +2,16 @@
   "name": "@lars_hagemann/tags",
   "version": "1.0.0",
   "description": "A general tagging library build on postgres",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist/",
+    "README.md"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "test": "vitest",
     "test:unit": "vitest --config vitest.unit.config.ts"
   },
@@ -13,9 +20,9 @@
   "devDependencies": {
     "docker-compose": "^1.2.0",
     "postgres": "^3.4.7",
+    "tsc-alias": "^1.8.16",
     "vitest": "^3.2.4"
   },
-  "types": "./src/index.d.ts",
   "dependencies": {
     "typescript": "^5.9.2"
   }
