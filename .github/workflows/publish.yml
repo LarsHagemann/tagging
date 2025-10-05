@@ -19,6 +19,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: paulhatch/semantic-version@v5.4.0
         id: version
+        with:
+          bump_each_commit: true
       - name: Tag snapshot
         continue-on-error: true
         if: ${{ steps.version.outputs.version_type != 'none' }}
