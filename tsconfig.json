@@ -38,12 +38,13 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "esModuleInterop": true
   },
   "tsc-alias": {
     "resolveFullPaths": true,
     "verbose": false
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "sample/TagSqlBuilder.ts"],
   "exclude": ["node_modules", "dist", "test", "**/*.test.ts"]
 }

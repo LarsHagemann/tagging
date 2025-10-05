@@ -33,6 +33,8 @@ const parser = new TagParser('[abcd && efgh] OR [ijkl && mnop]', MyScanner);
 const parsed = parser.parse();
 ```
 
+See the [Samples](./sample/) and the integration tests for example applications of this library. 
+
 ### Tests
 
 Run the unit tests via 

@@ -1,4 +1,5 @@
 import { MetaTag, Tag } from "./Tag";
+import { TagIdNotFoundError } from "./TagIdNotFoundError";
 import { Trie } from "./Trie";
 
 export class TagIdCache {
@@ -16,16 +17,18 @@ export class TagIdCache {
     const id = this.tagTrie.lookup(this.tagToString(tag));
 
     if (!id.isPresent()) {
-      throw new Error(`Tag not found: ${this.tagToString(tag)}`);
+      throw new TagIdNotFoundError(this.tagToString(tag));
     }
 
     return id.get();
   }
 
-  public init(tags: {
-    tag: Tag | MetaTag,
-    tagId: string
-  }[]) {
+  public init(
+    tags: {
+      tag: Tag | MetaTag;
+      tagId: string;
+    }[]
+  ) {
     tags.forEach(({ tag, tagId }) => {
       this.onTagAdded(tag, tagId);
     });

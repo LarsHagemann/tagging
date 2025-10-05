@@ -1,19 +1,27 @@
-export type TokenType = 'IDENTIFIER' | 'COLON' | 'AND' | 'OR' | 'NOT' | 'LPAREN' | 'RPAREN' | 'EOF';
+export type TokenType =
+  | "IDENTIFIER"
+  | "COLON"
+  | "AND"
+  | "OR"
+  | "NOT"
+  | "LPAREN"
+  | "RPAREN"
+  | "EOF";
 export const tokenType = {
-  IDENTIFIER: 'IDENTIFIER',
-  COLON: 'COLON',
-  AND: 'AND',
-  OR: 'OR',
-  NOT: 'NOT',
-  LPAREN: 'LPAREN',
-  RPAREN: 'RPAREN',
-  EOF: 'EOF',
+  IDENTIFIER: "IDENTIFIER",
+  COLON: "COLON",
+  AND: "AND",
+  OR: "OR",
+  NOT: "NOT",
+  LPAREN: "LPAREN",
+  RPAREN: "RPAREN",
+  EOF: "EOF",
 } as const;
 
 export type Token = {
   type: TokenType;
   lexeme: string;
-}
+};
 
 export class TagScanner {
   private current: number = 0;
@@ -22,8 +30,8 @@ export class TagScanner {
   constructor(private readonly filter: string) {}
 
   private makeToken(type: TokenType): Token {
-    const token = { 
-      type, 
+    const token = {
+      type,
       lexeme: this.filter.substring(this.begin, this.current),
     };
 
@@ -32,7 +40,10 @@ export class TagScanner {
   }
 
   private skipWhitespace(): void {
-    while (this.current < this.filter.length && /\s/.test(this.filter[this.current]!)) {
+    while (
+      this.current < this.filter.length &&
+      /\s/.test(this.filter[this.current]!)
+    ) {
       this.current++;
     }
     this.begin = this.current;
@@ -42,11 +53,14 @@ export class TagScanner {
     if (this.current < this.filter.length) {
       return this.filter[this.current++]!;
     }
-    return '';
+    return "";
   }
 
   private makeIdentifier(): Token {
-    while (this.current < this.filter.length && /\w/.test(this.filter[this.current]!)) {
+    while (
+      this.current < this.filter.length &&
+      /[\w\.\/]/.test(this.filter[this.current]!)
+    ) {
       this.advance();
     }
 
@@ -61,13 +75,20 @@ export class TagScanner {
 
     const c = this.advance();
     switch (c) {
-      case '&': return this.makeToken(tokenType.AND);
-      case '|': return this.makeToken(tokenType.OR);
-      case '!': return this.makeToken(tokenType.NOT);
-      case '(': return this.makeToken(tokenType.LPAREN);
-      case ')': return this.makeToken(tokenType.RPAREN);
-      case ':': return this.makeToken(tokenType.COLON);
-      default: return this.makeIdentifier();
+      case "&":
+        return this.makeToken(tokenType.AND);
+      case "|":
+        return this.makeToken(tokenType.OR);
+      case "!":
+        return this.makeToken(tokenType.NOT);
+      case "(":
+        return this.makeToken(tokenType.LPAREN);
+      case ")":
+        return this.makeToken(tokenType.RPAREN);
+      case ":":
+        return this.makeToken(tokenType.COLON);
+      default:
+        return this.makeIdentifier();
     }
   }
-};
+}

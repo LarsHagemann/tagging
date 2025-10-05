@@ -1,7 +1,7 @@
 {
   "name": "@lars_hagemann/tags",
   "version": "1.0.0",
-  "description": "A general tagging library build on postgres",
+  "description": "A general tagging library build on typescript",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

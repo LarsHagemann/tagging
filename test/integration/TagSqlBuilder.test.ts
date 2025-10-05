@@ -1,29 +1,32 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest"
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { SqlService } from "../SqlService";
 import { TagParser } from "../../src/TagParser";
-import { buildQueryFromSelectStatement, TagSqlBuilder } from "../../src/TagSqlBuilder";
+import {
+  buildQueryFromSelectStatement,
+  TagSqlBuilder,
+} from "../../sample/TagSqlBuilder";
 import { TagIdCache } from "../../src/TagIdCache";
 import { Tag } from "../../src/Tag";
 
-describe('TagSqlBuilder', () => {
+describe("TagSqlBuilder", () => {
   const dbService = new SqlService();
   const cache = new TagIdCache();
 
   cache.init([
     {
-      tag: new Tag('tag1'),
+      tag: new Tag("tag1"),
       tagId: "1",
     },
     {
-      tag: new Tag('tag2'),
+      tag: new Tag("tag2"),
       tagId: "2",
     },
     {
-      tag: new Tag('tag3'),
+      tag: new Tag("tag3"),
       tagId: "3",
     },
     {
-      tag: new Tag('tag4'),
+      tag: new Tag("tag4"),
       tagId: "4",
     },
   ]);
@@ -34,7 +37,8 @@ describe('TagSqlBuilder', () => {
     await dbService.client`
       CREATE TABLE tags (
         id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL
+        key VARCHAR(255) NOT NULL
+        value VARCHAR(255)
       );
     `;
 
@@ -58,19 +62,19 @@ describe('TagSqlBuilder', () => {
     const users = [
       {
         email: "user1@example.com",
-        name: "User One"
+        name: "User One",
       },
       {
         email: "user2@example.com",
-        name: "User Two"
+        name: "User Two",
       },
       {
         email: "user3@example.com",
-        name: "User Three"
+        name: "User Three",
       },
       {
         email: "user4@example.com",
-        name: "User Four"
+        name: "User Four",
       },
     ];
 
@@ -84,12 +88,12 @@ describe('TagSqlBuilder', () => {
     `;
 
     await dbService.client`
-      INSERT INTO tags (name)
+      INSERT INTO tags (key, value)
       VALUES
-        ('tag1'),
-        ('tag2'),
-        ('tag3'),
-        ('tag4')
+        ('tag1', NULL),
+        ('tag2', NULL),
+        ('tag3', 'meta'),
+        ('tag4', NULL)
     `;
 
     await dbService.client`
@@ -109,207 +113,292 @@ describe('TagSqlBuilder', () => {
     await dbService.truncateTables();
   });
 
-  it('Correctly applies the empty filter', async () => {
-    const parser = new TagParser('');
+  it("Correctly applies the empty filter", async () => {
+    const parser = new TagParser("");
     const filter = parser.parse();
 
-    const builder = new TagSqlBuilder({
-      userdataTableColumns: ['id', 'email', 'name'],
-      userdataTableIdColumn: 'id',
-      userdataTableName: 'userdata',
-    }, cache);
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
 
-    const sql = builder.buildTagFilterQuery(filter);
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
 
     expect(sql.success).toBe(true);
 
     if (sql.success) {
-      const query = buildQueryFromSelectStatement(sql.sql);
+      const query = buildQueryFromSelectStatement(sql.stmt);
       const results = await dbService.client.unsafe(query);
 
       expect(results.length).toBe(4);
-      expect(results).toEqual(expect.arrayContaining([
-        expect.objectContaining({ email: "user1@example.com", name: "User One" }),
-        expect.objectContaining({ email: "user2@example.com", name: "User Two" }),
-        expect.objectContaining({ email: "user3@example.com", name: "User Three" }),
-        expect.objectContaining({ email: "user4@example.com", name: "User Four" }),
-      ]));
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            email: "user1@example.com",
+            name: "User One",
+          }),
+          expect.objectContaining({
+            email: "user2@example.com",
+            name: "User Two",
+          }),
+          expect.objectContaining({
+            email: "user3@example.com",
+            name: "User Three",
+          }),
+          expect.objectContaining({
+            email: "user4@example.com",
+            name: "User Four",
+          }),
+        ])
+      );
     }
   });
 
-  it('Correctly applies a single tag filter', async () => {
-    const parser = new TagParser('tag1');
+  it("Correctly applies a single tag filter", async () => {
+    const parser = new TagParser("tag1");
     const filter = parser.parse();
 
-    const builder = new TagSqlBuilder({
-      userdataTableColumns: ['id', 'email', 'name'],
-      userdataTableIdColumn: 'id',
-      userdataTableName: 'userdata',
-    }, cache);
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
 
-    const sql = builder.buildTagFilterQuery(filter);
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
 
     expect(sql.success).toBe(true);
 
     if (sql.success) {
-      const query = buildQueryFromSelectStatement(sql.sql);
+      const query = buildQueryFromSelectStatement(sql.stmt);
       const results = await dbService.client.unsafe(query);
 
       expect(results.length).toBe(1);
-      expect(results).toEqual(expect.arrayContaining([
-        expect.objectContaining({ email: "user1@example.com", name: "User One" }),
-      ]));
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            email: "user1@example.com",
+            name: "User One",
+          }),
+        ])
+      );
     }
   });
 
-  it('Correctly applies a single tag filter', async () => {
-    const builder = new TagSqlBuilder({
-      userdataTableColumns: ['id', 'email', 'name'],
-      userdataTableIdColumn: 'id',
-      userdataTableName: 'userdata',
-    }, cache);
+  it("Correctly applies a single tag filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
 
     {
-      const parser = new TagParser('tag1');
+      const parser = new TagParser("tag1");
       const filter = parser.parse();
 
-      const sql = builder.buildTagFilterQuery(filter);
+      const sql = builder.buildListFilteredEntitiesQuery(filter);
 
       expect(sql.success).toBe(true);
 
       if (sql.success) {
-        const query = buildQueryFromSelectStatement(sql.sql);
+        const query = buildQueryFromSelectStatement(sql.stmt);
         const results = await dbService.client.unsafe(query);
 
         expect(results.length).toBe(1);
-        expect(results).toEqual(expect.arrayContaining([
-          expect.objectContaining({ email: "user1@example.com", name: "User One" }),
-        ]));
+        expect(results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              email: "user1@example.com",
+              name: "User One",
+            }),
+          ])
+        );
       }
     }
 
     {
-      const parser = new TagParser('tag2');
+      const parser = new TagParser("tag2");
       const filter = parser.parse();
 
-      const sql = builder.buildTagFilterQuery(filter);
+      const sql = builder.buildListFilteredEntitiesQuery(filter);
 
       expect(sql.success).toBe(true);
 
       if (sql.success) {
-        const query = buildQueryFromSelectStatement(sql.sql);
+        const query = buildQueryFromSelectStatement(sql.stmt);
         const results = await dbService.client.unsafe(query);
 
         expect(results.length).toBe(2);
-        expect(results).toEqual(expect.arrayContaining([
-          expect.objectContaining({ email: "user1@example.com", name: "User One" }),
-          expect.objectContaining({ email: "user2@example.com", name: "User Two" }),
-        ]));
+        expect(results).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              email: "user1@example.com",
+              name: "User One",
+            }),
+            expect.objectContaining({
+              email: "user2@example.com",
+              name: "User Two",
+            }),
+          ])
+        );
       }
     }
   });
 
-  it('Correctly applies an and filter', async () => {
-    const builder = new TagSqlBuilder({
-      userdataTableColumns: ['id', 'email', 'name'],
-      userdataTableIdColumn: 'id',
-      userdataTableName: 'userdata',
-    }, cache);
+  it("Correctly applies an and filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
 
-    const parser = new TagParser('tag2 & tag3');
+    const parser = new TagParser("tag2 & tag3");
     const filter = parser.parse();
 
-    const sql = builder.buildTagFilterQuery(filter);
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
 
     expect(sql.success).toBe(true);
 
     if (sql.success) {
-      const query = buildQueryFromSelectStatement(sql.sql);
+      const query = buildQueryFromSelectStatement(sql.stmt);
       const results = await dbService.client.unsafe(query);
 
       expect(results.length).toBe(1);
-      expect(results).toEqual(expect.arrayContaining([
-        expect.objectContaining({ email: "user2@example.com", name: "User Two" }),
-      ]));
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            email: "user2@example.com",
+            name: "User Two",
+          }),
+        ])
+      );
     }
   });
 
-  it('Correctly applies an or filter', async () => {
-    const builder = new TagSqlBuilder({
-      userdataTableColumns: ['id', 'email', 'name'],
-      userdataTableIdColumn: 'id',
-      userdataTableName: 'userdata',
-    }, cache);
+  it("Correctly applies an or filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
 
-    const parser = new TagParser('tag2 | tag3');
+    const parser = new TagParser("tag2 | tag3");
     const filter = parser.parse();
 
-    const sql = builder.buildTagFilterQuery(filter);
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
 
     expect(sql.success).toBe(true);
 
     if (sql.success) {
-      const query = buildQueryFromSelectStatement(sql.sql);
+      const query = buildQueryFromSelectStatement(sql.stmt);
       const results = await dbService.client.unsafe(query);
 
       expect(results.length).toBe(3);
-      expect(results).toEqual(expect.arrayContaining([
-        expect.objectContaining({ email: "user1@example.com", name: "User One" }),
-        expect.objectContaining({ email: "user2@example.com", name: "User Two" }),
-        expect.objectContaining({ email: "user3@example.com", name: "User Three" }),
-      ]));
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            email: "user1@example.com",
+            name: "User One",
+          }),
+          expect.objectContaining({
+            email: "user2@example.com",
+            name: "User Two",
+          }),
+          expect.objectContaining({
+            email: "user3@example.com",
+            name: "User Three",
+          }),
+        ])
+      );
     }
   });
 
-  it('Correctly applies a not filter', async () => {
-    const builder = new TagSqlBuilder({
-      userdataTableColumns: ['id', 'email', 'name'],
-      userdataTableIdColumn: 'id',
-      userdataTableName: 'userdata',
-    }, cache);
+  it("Correctly applies a not filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
 
-    const parser = new TagParser('!tag3');
+    const parser = new TagParser("!tag3");
     const filter = parser.parse();
 
-    const sql = builder.buildTagFilterQuery(filter);
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
 
     expect(sql.success).toBe(true);
 
     if (sql.success) {
-      const query = buildQueryFromSelectStatement(sql.sql);
+      const query = buildQueryFromSelectStatement(sql.stmt);
       const results = await dbService.client.unsafe(query);
 
       expect(results.length).toBe(2);
-      expect(results).toEqual(expect.arrayContaining([
-        expect.objectContaining({ email: "user1@example.com", name: "User One" }),
-        expect.objectContaining({ email: "user4@example.com", name: "User Four" }),
-      ]));
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            email: "user1@example.com",
+            name: "User One",
+          }),
+          expect.objectContaining({
+            email: "user4@example.com",
+            name: "User Four",
+          }),
+        ])
+      );
     }
   });
 
-  it('Correctly applies a grouping filter', async () => {
-    const builder = new TagSqlBuilder({
-      userdataTableColumns: ['id', 'email', 'name'],
-      userdataTableIdColumn: 'id',
-      userdataTableName: 'userdata',
-    }, cache);
+  it("Correctly applies a grouping filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
 
-    const parser = new TagParser('tag1 | (tag3 & tag4)');
+    const parser = new TagParser("tag1 | (tag3 & tag4)");
     const filter = parser.parse();
 
-    const sql = builder.buildTagFilterQuery(filter);
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
 
     expect(sql.success).toBe(true);
 
     if (sql.success) {
-      const query = buildQueryFromSelectStatement(sql.sql);
+      const query = buildQueryFromSelectStatement(sql.stmt);
       const results = await dbService.client.unsafe(query);
 
       expect(results.length).toBe(2);
-      expect(results).toEqual(expect.arrayContaining([
-        expect.objectContaining({ email: "user1@example.com", name: "User One" }),
-        expect.objectContaining({ email: "user3@example.com", name: "User Three" }),
-      ]));
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            email: "user1@example.com",
+            name: "User One",
+          }),
+          expect.objectContaining({
+            email: "user3@example.com",
+            name: "User Three",
+          }),
+        ])
+      );
     }
   });
 });
