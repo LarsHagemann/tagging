@@ -9,7 +9,7 @@ describe('TagScanner', () => {
 
   it('scans single tokens', () => {
     ([
-      ['&', tokenType.AND], 
+      ['&', tokenType.AND],
       ['|', tokenType.OR],
       ['!', tokenType.NOT],
       ['(', tokenType.LPAREN],
@@ -29,9 +29,20 @@ describe('TagScanner', () => {
     expect(scanner.nextToken().type).toEqual(tokenType.EOF);
   });
 
+  it('correctly handles umlauts', () => {
+    const scanner = new TagScanner('$Hällo Wörld');
+    const token1 = scanner.nextToken();
+    expect(token1.type).toEqual(tokenType.IDENTIFIER);
+    expect(token1.lexeme).toEqual('$Hällo');
+    const token2 = scanner.nextToken();
+    expect(token2.type).toEqual(tokenType.IDENTIFIER);
+    expect(token2.lexeme).toEqual('Wörld');
+    expect(scanner.nextToken().type).toEqual(tokenType.EOF);
+  });
+
   it('scans single tokens with whitespace', () => {
     ([
-      ['  &  ', tokenType.AND], 
+      ['  &  ', tokenType.AND],
       ['  |  ', tokenType.OR],
       ['  !  ', tokenType.NOT],
       ['  (  ', tokenType.LPAREN],
