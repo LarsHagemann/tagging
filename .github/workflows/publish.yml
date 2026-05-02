@@ -43,9 +43,4 @@ jobs:
       - run: |
           npm ci
           npm run build
-      - uses: JS-DevTools/npm-publish@v3
-        if: ${{ steps.version.outputs.version_type != 'none' }}
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          access: public
-          tag: ${{ github.ref_name == 'main' && 'latest' || 'next' }}
+          npm publish --access public
