@@ -27,7 +27,7 @@ export class TagScanner {
   private current: number = 0;
   private begin: number = 0;
 
-  constructor(private readonly filter: string) {}
+  constructor(private readonly filter: string) { }
 
   private makeToken(type: TokenType): Token {
     const token = {
@@ -56,10 +56,14 @@ export class TagScanner {
     return "";
   }
 
+  private isValidIdentifierChar(c: string): boolean {
+    return /[^\s&|!():]/.test(c);
+  }
+
   private makeIdentifier(): Token {
     while (
       this.current < this.filter.length &&
-      /[\w\.\/]/.test(this.filter[this.current]!)
+      this.isValidIdentifierChar(this.filter[this.current]!)
     ) {
       this.advance();
     }

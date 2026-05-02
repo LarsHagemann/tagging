@@ -39,7 +39,7 @@ describe('TagParser', () => {
 
     expect(parser.parse()).toEqual(new OrTag(new Tag('abcd'), new Tag('efgh')));
   });
-  
+
   it('correctly parses groupings', () => {
     const parser = new TagParser('(abcd & efgh) | (ijkl & mnop)');
 
@@ -56,5 +56,11 @@ describe('TagParser', () => {
       new NotTag(new Tag('abcd')),
       new OrTag(new Tag('efgh'), new Tag('ijkl'))
     ));
+  });
+
+  it('correctly handles umlauts', () => {
+    const parser = new TagParser('Hällo & Wörld');
+
+    expect(parser.parse()).toEqual(new AndTag(new Tag('Hällo'), new Tag('Wörld')));
   });
 });

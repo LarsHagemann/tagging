@@ -37,7 +37,7 @@ describe("TagSqlBuilder", () => {
     await dbService.client`
       CREATE TABLE tags (
         id SERIAL PRIMARY KEY,
-        key VARCHAR(255) NOT NULL
+        key VARCHAR(255) NOT NULL,
         value VARCHAR(255)
       );
     `;
