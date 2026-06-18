@@ -11,7 +11,7 @@ export class Trie<Data> {
   }
 
   public insert(key: string, value: Data): void {
-    if (key === this.currentPrefix || key === "") {
+    if (key === "") {
       this.data = value;
       return;
     }
@@ -28,7 +28,7 @@ export class Trie<Data> {
   }
 
   public lookup(key: string): Optional<Data> {
-    if (key === this.currentPrefix || key === "") {
+    if (key === "") {
       return new Optional(this.data);
     }
 

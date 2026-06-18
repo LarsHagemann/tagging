@@ -28,6 +28,10 @@ export type SelectStatement = {
   sortBy?: "timestamp" | "random";
   where?: string;
   sortDirection?: "asc" | "desc";
+  // Values bound to the $1, $2, ... placeholders in the query, in order.
+  // Pass these to the driver (e.g. `sql.unsafe(query, parameters)`) so that
+  // tag ids are never interpolated directly into the SQL string.
+  parameters?: string[];
 };
 
 export type UpdateStatement = {
@@ -82,7 +86,13 @@ export class TagSqlBuilder {
     };
   }
 
-  private parseMetaTag(tag: MetaTag): string {
+  // Records `value` as a bound parameter and returns its `$N` placeholder.
+  private bindParameter(parameters: string[], value: string): string {
+    parameters.push(value);
+    return `$${parameters.length}`;
+  }
+
+  private parseMetaTag(tag: MetaTag, parameters: string[]): string {
     if (tag.key === "sort") {
       switch (tag.value) {
         case "random":
@@ -100,30 +110,36 @@ export class TagSqlBuilder {
       return `1=1`;
     }
 
-    return `SUM(CASE WHEN ut.tag_id = '${this.tagIdCache.tagToTagId(
-      tag
-    )}' THEN 1 ELSE 0 END) > 0`;
+    const placeholder = this.bindParameter(
+      parameters,
+      this.tagIdCache.tagToTagId(tag)
+    );
+    return `SUM(CASE WHEN ut.tag_id = ${placeholder} THEN 1 ELSE 0 END) > 0`;
   }
 
-  private sqlFilterConditions(filter: Filter): string {
+  private sqlFilterConditions(filter: Filter, parameters: string[]): string {
     if (filter instanceof Tag) {
-      return `SUM(CASE WHEN ut.tag_id = '${this.tagIdCache.tagToTagId(
-        filter
-      )}' THEN 1 ELSE 0 END) > 0`;
+      const placeholder = this.bindParameter(
+        parameters,
+        this.tagIdCache.tagToTagId(filter)
+      );
+      return `SUM(CASE WHEN ut.tag_id = ${placeholder} THEN 1 ELSE 0 END) > 0`;
     } else if (filter instanceof MetaTag) {
-      return this.parseMetaTag(filter);
+      return this.parseMetaTag(filter, parameters);
     } else if (filter instanceof TrueTag) {
       return `1=1`;
     } else if (filter instanceof OrTag) {
       return `(${this.sqlFilterConditions(
-        filter.left
-      )} OR ${this.sqlFilterConditions(filter.right)})`;
+        filter.left,
+        parameters
+      )} OR ${this.sqlFilterConditions(filter.right, parameters)})`;
     } else if (filter instanceof AndTag) {
       return `(${this.sqlFilterConditions(
-        filter.left
-      )} AND ${this.sqlFilterConditions(filter.right)})`;
+        filter.left,
+        parameters
+      )} AND ${this.sqlFilterConditions(filter.right, parameters)})`;
     } else if (filter instanceof NotTag) {
-      return `NOT (${this.sqlFilterConditions(filter.inner)})`;
+      return `NOT (${this.sqlFilterConditions(filter.inner, parameters)})`;
     }
 
     return "1=1";
@@ -138,6 +154,9 @@ export class TagSqlBuilder {
     this.setupParse();
 
     try {
+      const parameters: string[] = [];
+      const having = this.sqlFilterConditions(filter, parameters);
+
       return {
         success: true,
         stmt: {
@@ -153,9 +172,10 @@ export class TagSqlBuilder {
             },
           ],
           groupBy: `u.${this.builderConfig.userdataTableIdColumn}`,
-          having: `${this.sqlFilterConditions(filter)}`,
+          having,
           sortBy: this.currentParse.sortBy,
           sortDirection: this.currentParse.sortDirection,
+          parameters,
         },
       };
     } catch (error) {

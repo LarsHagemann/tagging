@@ -49,7 +49,9 @@ export class TagParser {
     this.expect(tokenType.IDENTIFIER, "Expected identifier");
     const key = this.previous.lexeme;
     if (this.match(tokenType.COLON)) {
-      this.advance();
+      if (!this.match(tokenType.IDENTIFIER) && !this.match(tokenType.STRING)) {
+        throw new Error("Expected value after ':'");
+      }
       return new MetaTag(key, this.previous.lexeme);
     }
     return new Tag(key);

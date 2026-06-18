@@ -7,6 +7,44 @@ describe('TagScanner', () => {
     expect(scanner.nextToken().type).toEqual(tokenType.EOF);
   });
 
+  it('scans quoted strings with double quotes', () => {
+    const scanner = new TagScanner('"hello world"');
+    const token = scanner.nextToken();
+    expect(token.type).toEqual(tokenType.STRING);
+    expect(token.lexeme).toEqual('hello world');
+    expect(scanner.nextToken().type).toEqual(tokenType.EOF);
+  });
+
+  it('scans quoted strings with backticks', () => {
+    const scanner = new TagScanner('`hello world`');
+    const token = scanner.nextToken();
+    expect(token.type).toEqual(tokenType.STRING);
+    expect(token.lexeme).toEqual('hello world');
+    expect(scanner.nextToken().type).toEqual(tokenType.EOF);
+  });
+
+  it('throws on unclosed double-quote string', () => {
+    const scanner = new TagScanner('"hello');
+    expect(() => scanner.nextToken()).toThrow('Unterminated string: expected closing "');
+  });
+
+  it('throws on unclosed backtick string', () => {
+    const scanner = new TagScanner('`hello');
+    expect(() => scanner.nextToken()).toThrow('Unterminated string: expected closing `');
+  });
+
+  it('scans a quoted string immediately followed by an operator', () => {
+    const scanner = new TagScanner('"hello"&tag');
+    const t1 = scanner.nextToken();
+    expect(t1.type).toEqual(tokenType.STRING);
+    expect(t1.lexeme).toEqual('hello');
+    expect(scanner.nextToken().type).toEqual(tokenType.AND);
+    const t3 = scanner.nextToken();
+    expect(t3.type).toEqual(tokenType.IDENTIFIER);
+    expect(t3.lexeme).toEqual('tag');
+    expect(scanner.nextToken().type).toEqual(tokenType.EOF);
+  });
+
   it('scans single tokens', () => {
     ([
       ['&', tokenType.AND],
