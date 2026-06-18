@@ -105,6 +105,9 @@ export class TagScanner {
     while (this.current < this.filter.length && this.filter[this.current] !== quote) {
       this.advance();
     }
+    if (this.current >= this.filter.length) {
+      throw new Error(`Unterminated string: expected closing ${quote}`);
+    }
     this.advance(); // consume closing quote
     const lexeme = this.filter.substring(this.begin + 1, this.current - 1);
     this.begin = this.current;

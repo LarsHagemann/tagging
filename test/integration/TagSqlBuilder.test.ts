@@ -132,7 +132,7 @@ describe("TagSqlBuilder", () => {
 
     if (sql.success) {
       const query = buildQueryFromSelectStatement(sql.stmt);
-      const results = await dbService.client.unsafe(query);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
 
       expect(results.length).toBe(4);
       expect(results).toEqual(
@@ -177,7 +177,7 @@ describe("TagSqlBuilder", () => {
 
     if (sql.success) {
       const query = buildQueryFromSelectStatement(sql.stmt);
-      const results = await dbService.client.unsafe(query);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
 
       expect(results.length).toBe(1);
       expect(results).toEqual(
@@ -211,7 +211,7 @@ describe("TagSqlBuilder", () => {
 
       if (sql.success) {
         const query = buildQueryFromSelectStatement(sql.stmt);
-        const results = await dbService.client.unsafe(query);
+        const results = await dbService.client.unsafe(query, sql.stmt.parameters);
 
         expect(results.length).toBe(1);
         expect(results).toEqual(
@@ -235,7 +235,7 @@ describe("TagSqlBuilder", () => {
 
       if (sql.success) {
         const query = buildQueryFromSelectStatement(sql.stmt);
-        const results = await dbService.client.unsafe(query);
+        const results = await dbService.client.unsafe(query, sql.stmt.parameters);
 
         expect(results.length).toBe(2);
         expect(results).toEqual(
@@ -273,7 +273,7 @@ describe("TagSqlBuilder", () => {
 
     if (sql.success) {
       const query = buildQueryFromSelectStatement(sql.stmt);
-      const results = await dbService.client.unsafe(query);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
 
       expect(results.length).toBe(1);
       expect(results).toEqual(
@@ -306,7 +306,7 @@ describe("TagSqlBuilder", () => {
 
     if (sql.success) {
       const query = buildQueryFromSelectStatement(sql.stmt);
-      const results = await dbService.client.unsafe(query);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
 
       expect(results.length).toBe(3);
       expect(results).toEqual(
@@ -347,7 +347,7 @@ describe("TagSqlBuilder", () => {
 
     if (sql.success) {
       const query = buildQueryFromSelectStatement(sql.stmt);
-      const results = await dbService.client.unsafe(query);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
 
       expect(results.length).toBe(2);
       expect(results).toEqual(
@@ -360,6 +360,178 @@ describe("TagSqlBuilder", () => {
             email: "user4@example.com",
             name: "User Four",
           }),
+        ])
+      );
+    }
+  });
+
+  it("Returns failure for a tag not in the cache", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
+
+    const parser = new TagParser("unknowntag");
+    const filter = parser.parse();
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
+
+    expect(sql.success).toBe(false);
+    if (!sql.success) {
+      expect(sql.message).toContain("unknowntag");
+    }
+  });
+
+  it("Correctly applies a chained AND filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
+
+    // No user has all three tags
+    const parser = new TagParser("tag1 & tag2 & tag3");
+    const filter = parser.parse();
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
+
+    expect(sql.success).toBe(true);
+
+    if (sql.success) {
+      const query = buildQueryFromSelectStatement(sql.stmt);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
+
+      expect(results.length).toBe(0);
+    }
+  });
+
+  it("Correctly applies a chained OR filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
+
+    // user1 (tag1,tag2), user2 (tag2,tag3), user3 (tag3,tag4) have at least one of tag1|tag2|tag3
+    const parser = new TagParser("tag1 | tag2 | tag3");
+    const filter = parser.parse();
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
+
+    expect(sql.success).toBe(true);
+
+    if (sql.success) {
+      const query = buildQueryFromSelectStatement(sql.stmt);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
+
+      expect(results.length).toBe(3);
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ email: "user1@example.com" }),
+          expect.objectContaining({ email: "user2@example.com" }),
+          expect.objectContaining({ email: "user3@example.com" }),
+        ])
+      );
+    }
+  });
+
+  it("Evaluates & and | left-to-right with equal precedence", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
+
+    // Parses as (tag1 & tag2) | tag3
+    // user1 has both tag1 and tag2; user2 and user3 have tag3
+    const parser = new TagParser("tag1 & tag2 | tag3");
+    const filter = parser.parse();
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
+
+    expect(sql.success).toBe(true);
+
+    if (sql.success) {
+      const query = buildQueryFromSelectStatement(sql.stmt);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
+
+      expect(results.length).toBe(3);
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ email: "user1@example.com" }),
+          expect.objectContaining({ email: "user2@example.com" }),
+          expect.objectContaining({ email: "user3@example.com" }),
+        ])
+      );
+    }
+  });
+
+  it("Correctly applies !(tag | tag) filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
+
+    // user3 and user4 have neither tag1 nor tag2
+    const parser = new TagParser("!(tag1 | tag2)");
+    const filter = parser.parse();
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
+
+    expect(sql.success).toBe(true);
+
+    if (sql.success) {
+      const query = buildQueryFromSelectStatement(sql.stmt);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
+
+      expect(results.length).toBe(2);
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ email: "user3@example.com" }),
+          expect.objectContaining({ email: "user4@example.com" }),
+        ])
+      );
+    }
+  });
+
+  it("Correctly applies !tag & !tag filter", async () => {
+    const builder = new TagSqlBuilder(
+      {
+        userdataTableColumns: ["id", "email", "name"],
+        userdataTableIdColumn: "id",
+        userdataTableName: "userdata",
+      },
+      cache
+    );
+
+    // De Morgan's equivalent of !(tag1 | tag2): user3 and user4
+    const parser = new TagParser("!tag1 & !tag2");
+    const filter = parser.parse();
+    const sql = builder.buildListFilteredEntitiesQuery(filter);
+
+    expect(sql.success).toBe(true);
+
+    if (sql.success) {
+      const query = buildQueryFromSelectStatement(sql.stmt);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
+
+      expect(results.length).toBe(2);
+      expect(results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ email: "user3@example.com" }),
+          expect.objectContaining({ email: "user4@example.com" }),
         ])
       );
     }
@@ -384,7 +556,7 @@ describe("TagSqlBuilder", () => {
 
     if (sql.success) {
       const query = buildQueryFromSelectStatement(sql.stmt);
-      const results = await dbService.client.unsafe(query);
+      const results = await dbService.client.unsafe(query, sql.stmt.parameters);
 
       expect(results.length).toBe(2);
       expect(results).toEqual(

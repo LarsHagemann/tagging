@@ -35,9 +35,6 @@ export class TagIdCache {
   }
 
   public onTagAdded(tag: Tag | MetaTag, tagId: string): void {
-    const tagName = this.tagToString(tag);
-    if (tagName) {
-      this.tagTrie.insert(tagName, tagId);
-    }
+    this.tagTrie.insert(this.tagToString(tag), tagId);
   }
 }

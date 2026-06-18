@@ -81,4 +81,43 @@ describe('TagParser', () => {
 
     expect(parser.parse()).toEqual(new AndTag(new MetaTag('key', 'some value'), new Tag('other')));
   });
+
+  it('correctly parses a quoted value containing special characters', () => {
+    const parser = new TagParser('key:"value&with|special!chars"');
+
+    expect(parser.parse()).toEqual(new MetaTag('key', 'value&with|special!chars'));
+  });
+
+  it('throws when meta tag value is missing', () => {
+    expect(() => new TagParser('key:').parse()).toThrow('Expected value after \':\'');
+  });
+
+  it('throws on unclosed parenthesis', () => {
+    expect(() => new TagParser('(abcd & efgh').parse()).toThrow('Expected closing parenthesis');
+  });
+
+  it('throws on extra tokens after expression', () => {
+    expect(() => new TagParser('abcd efgh').parse()).toThrow('Expected end of input');
+  });
+
+  it('parses & and | left-to-right with no precedence difference', () => {
+    expect(new TagParser('a & b | c').parse()).toEqual(
+      new OrTag(new AndTag(new Tag('a'), new Tag('b')), new Tag('c'))
+    );
+    expect(new TagParser('a | b & c').parse()).toEqual(
+      new AndTag(new OrTag(new Tag('a'), new Tag('b')), new Tag('c'))
+    );
+  });
+
+  it('correctly parses double NOT', () => {
+    expect(new TagParser('!!abcd').parse()).toEqual(
+      new NotTag(new NotTag(new Tag('abcd')))
+    );
+  });
+
+  it('correctly parses triple NOT', () => {
+    expect(new TagParser('!!!abcd').parse()).toEqual(
+      new NotTag(new NotTag(new NotTag(new Tag('abcd'))))
+    );
+  });
 });
