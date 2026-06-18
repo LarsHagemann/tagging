@@ -63,4 +63,22 @@ describe('TagParser', () => {
 
     expect(parser.parse()).toEqual(new AndTag(new Tag('Hällo'), new Tag('Wörld')));
   });
+
+  it('correctly parses a meta tag with a quoted double-quote value', () => {
+    const parser = new TagParser('key:"All of this is the value"');
+
+    expect(parser.parse()).toEqual(new MetaTag('key', 'All of this is the value'));
+  });
+
+  it('correctly parses a meta tag with a backtick-quoted value', () => {
+    const parser = new TagParser('key:`All of this is the value`');
+
+    expect(parser.parse()).toEqual(new MetaTag('key', 'All of this is the value'));
+  });
+
+  it('correctly parses a quoted value in a compound expression', () => {
+    const parser = new TagParser('key:"some value" & other');
+
+    expect(parser.parse()).toEqual(new AndTag(new MetaTag('key', 'some value'), new Tag('other')));
+  });
 });

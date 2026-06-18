@@ -7,6 +7,22 @@ describe('TagScanner', () => {
     expect(scanner.nextToken().type).toEqual(tokenType.EOF);
   });
 
+  it('scans quoted strings with double quotes', () => {
+    const scanner = new TagScanner('"hello world"');
+    const token = scanner.nextToken();
+    expect(token.type).toEqual(tokenType.STRING);
+    expect(token.lexeme).toEqual('hello world');
+    expect(scanner.nextToken().type).toEqual(tokenType.EOF);
+  });
+
+  it('scans quoted strings with backticks', () => {
+    const scanner = new TagScanner('`hello world`');
+    const token = scanner.nextToken();
+    expect(token.type).toEqual(tokenType.STRING);
+    expect(token.lexeme).toEqual('hello world');
+    expect(scanner.nextToken().type).toEqual(tokenType.EOF);
+  });
+
   it('scans single tokens', () => {
     ([
       ['&', tokenType.AND],
